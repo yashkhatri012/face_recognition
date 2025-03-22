@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Bollywood Celeb Are You?</title>
+    <style>
+        :root {
+            --primary: #e91e63;
+            --secondary: #ff9800;
+            --dark: #212121;
+            --light: #f5f5f5;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        p.subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            background-color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .results-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .result-box {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .result-box:hover {
+            transform: translateY(-5px);
+        }
+        
+        .result-box h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .image-container {
+            width: 100%;
+            height: 300px;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .placeholder-text {
+            color: #999;
+            font-style: italic;
+        }
+        
+        .celeb-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        
+        @media (max-width: 768px) {
+            .results-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>What Bollywood Celeb Are You?</h1>
+            <p class="subtitle">Upload your photo to find your Bollywood celebrity match!</p>
+        </header>
+        
+        <div class="upload-section">
+            <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+                <input type="file" id="imageUpload" name="image" accept="image/*" required />
+                <button type="submit" class="btn">Upload & Find Match</button>
+            </form>
+            <p id="uploadInstruction">Select a clear photo of your face for best results</p>
+        </div>
+        
+        
+        
+        <div class="results-container hidden" id="resultsContainer">
+            <div class="result-box">
+                <h3>Your Photo</h3>
+                <div class="image-container" id="userImageContainer">
+                    <p class="placeholder-text">Your image will appear here</p>
+                </div>
+            </div>
+            
+            <div class="result-box">
+                <h3>Your Celebrity Match</h3>
+                <div class="image-container" id="celebImageContainer">
+                    <p class="placeholder-text">Your match will appear here</p>
+                </div>
+                <div class="celeb-info" id="celebInfo">
+                    <h4 id="celebName">Celebrity Name</h4>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        document.getElementById('imageUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.match('image.*')) {
+                // Hide the instruction text
+                document.getElementById('uploadInstruction').style.display = 'none';
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    // Create image element for user photo
+                    const userImage = new Image();
+                    userImage.src = e.target.result;
+                    
+                    // Clear previous content and add the new image
+                    const userImageContainer = document.getElementById('userImageContainer');
+                    userImageContainer.innerHTML = '';
+                    userImageContainer.appendChild(userImage);
+                    
+                    // Show results container immediately
+                    document.getElementById('resultsContainer').classList.remove('hidden');
+                    
+                    // Select a random celebrity (in a real app, this would be based on AI matching)
+                    const randomCeleb = celebrities[Math.floor(Math.random() * celebrities.length)];
+                    
+                    // Update celebrity information
+                    const celebImage = new Image();
+                    celebImage.src = randomCeleb.image;
+                    
+                    const celebImageContainer = document.getElementById('celebImageContainer');
+                    celebImageContainer.innerHTML = '';
+                    celebImageContainer.appendChild(celebImage);
+                    
+                    document.getElementById('celebName').textContent = randomCeleb.name;
+                    document.getElementById('celebDescription').textContent = randomCeleb.description;
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>
+
