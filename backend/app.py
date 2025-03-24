@@ -8,6 +8,7 @@ from keras_vggface.utils import preprocess_input
 from keras_vggface.vggface import VGGFace
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
+import base64  # Added for image encoding
 
 app = Flask(__name__)
 
@@ -70,13 +71,53 @@ def upload():
     index_pos = recommend(feature_list, features)
     celeb_path = filenames[index_pos]
 
-    celeb_name = os.path.splitext(os.path.basename(celeb_path))[0]
-    print(celeb_path)
-    return jsonify({
-        "name": celeb_name,
-        "image_url": f"{celeb_path}",
-        "description": "You and this Bollywood star could be twins!"
-    })
+    # Extract celebrity name from directory path instead of filename
+    # Assuming structure is data/actor_name/image.jpg
+    celeb_name = os.path.basename(os.path.dirname(celeb_path))
+    
+    print(f"Celebrity path: {celeb_path}")
+    print(f"Celebrity name: {celeb_name}")
+    
+    # Convert image to base64 for direct display in browser
+    try:
+        img = cv2.imread(celeb_path)
+        if img is None:
+            raise Exception(f"Failed to load image from path: {celeb_path}")
+            
+        # Make sure the image is large enough
+        height, width = img.shape[:2]
+        # If the image is too small, resize it to be at least 600px in either dimension
+        min_dimension = 600
+        if height < min_dimension or width < min_dimension:
+            # Calculate new size maintaining aspect ratio
+            if width < height:
+                new_width = min_dimension
+                new_height = int(height * (min_dimension / width))
+            else:
+                new_height = min_dimension
+                new_width = int(width * (min_dimension / height))
+            img = cv2.resize(img, (new_width, new_height))
+            print(f"Resized image to {new_width}x{new_height}")
+            
+        # Convert to jpg format for better browser compatibility
+        _, buffer = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        image_data = base64.b64encode(buffer).decode('utf-8')
+        
+        print(f"Image loaded successfully, size: {len(image_data)} bytes")
+        
+        return jsonify({
+            "name": celeb_name,
+            "image_url": f"data:image/jpeg;base64,{image_data}",
+            "description": "You and this Bollywood star could be twins!"
+        })
+    except Exception as e:
+        print(f"Error reading image file: {e}")
+        return jsonify({
+            "name": celeb_name,
+            "image_url": "",
+            "error": f"Could not load image: {str(e)}",
+            "description": "You and this Bollywood star could be twins!"
+        })
 
 if __name__ == '__main__':
     app.run(debug=True)

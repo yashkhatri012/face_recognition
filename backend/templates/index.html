@@ -122,7 +122,7 @@
 
         .image-container {
             width: 100%;
-            height: 300px;
+            height: 400px;
             overflow: hidden;
             border-radius: 8px;
             margin-bottom: 15px;
@@ -133,9 +133,11 @@
         }
 
         .image-container img {
-            max-width: 100%;
-            max-height: 100%;
+            width: 90%;
+            height: 90%;
             object-fit: contain;
+            max-width: none;
+            max-height: none;
         }
 
         .hidden {
@@ -215,7 +217,30 @@
                 .then(data => {
                     loadingSection.classList.add('hidden');
                     resultsContainer.classList.remove('hidden');
-                    celebImageContainer.innerHTML = `<img src="${data.image_url}" alt="Celebrity Match">`; 
+                    
+                    console.log("Response data:", data);
+                    
+                    if (data.image_url) {
+                        const img = new Image();
+                        img.onload = function() {
+                            console.log("Image loaded successfully:", img.width, "x", img.height);
+                        };
+                        img.onerror = function() {
+                            console.error("Error loading the image");
+                        };
+                        img.src = data.image_url;
+                        img.alt = "Celebrity Match";
+                        img.style.width = "100%";
+                        img.style.height = "100%";
+                        img.style.objectFit = "contain";
+                        
+                        celebImageContainer.innerHTML = '';
+                        celebImageContainer.appendChild(img);
+                    } else {
+                        celebImageContainer.innerHTML = '<p>Image could not be loaded</p>';
+                        console.error("No image URL in response");
+                    }
+                    
                     celebName.textContent = data.name;
                     celebDescription.textContent = data.description;
                 })
