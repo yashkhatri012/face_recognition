@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>What Bollywood Celeb Are You?</title>
     <style>
         :root {
@@ -143,6 +143,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -151,7 +152,7 @@
         </header>
 
         <div class="upload-section">
-            <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+            <form id="uploadForm" enctype="multipart/form-data">
                 <input type="file" id="imageUpload" name="image" accept="image/*" required />
                 <button type="submit" class="btn">Upload & Find Match</button>
             </form>
@@ -171,65 +172,59 @@
             <div class="result-box">
                 <h3>Your Celebrity Match</h3>
                 <div class="image-container" id="celebImageContainer"></div>
-                <div class="celeb-info" id="celebInfo">
+                <div id="celebInfo">
                     <h4 id="celebName">Celebrity Name</h4>
+                    <p id="celebDescription">Celebrity description...</p>
                 </div>
             </div>
         </div>
     </div>
 
-    
     <script>
-        document.getElementById('imageUpload').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    
-    if (file && file.type.match('image.*')) {
-        // Hide the instruction text
-        document.getElementById('uploadInstruction').style.display = 'none';
-        
-        // Display the uploaded image
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const userImage = new Image();
-            userImage.src = e.target.result;
+        const uploadForm = document.getElementById('uploadForm');
+        const imageUpload = document.getElementById('imageUpload');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const userImageContainer = document.getElementById('userImageContainer');
+        const celebImageContainer = document.getElementById('celebImageContainer');
+        const celebName = document.getElementById('celebName');
+        const celebDescription = document.getElementById('celebDescription');
 
-            const userImageContainer = document.getElementById('userImageContainer');
-            userImageContainer.innerHTML = '';
-            userImageContainer.appendChild(userImage);
+        uploadForm.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-            // Show the results container
-            document.getElementById('resultsContainer').classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
+            const file = imageUpload.files[0];
+            if (!file) return alert('Please upload an image!');
 
-        // Send the image to the Flask backend
-        const formData = new FormData();
-        formData.append('image', file);
+            const formData = new FormData();
+            formData.append('image', file);
 
-        fetch('http://localhost:5000/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Update celebrity information from the backend
-            const celebImage = new Image();
-            celebImage.src = data.image_url;  // Backend should return an image URL
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                userImageContainer.innerHTML = `<img src="${e.target.result}" alt="User Image">`;
+            };
+            reader.readAsDataURL(file);
 
-            const celebImageContainer = document.getElementById('celebImageContainer');
-            celebImageContainer.innerHTML = '';
-            celebImageContainer.appendChild(celebImage);
+            loadingSection.classList.remove('hidden');
 
-            document.getElementById('celebName').textContent = data.name;
-            document.getElementById('celebDescription').textContent = data.description;
-        })
-        .catch(error => {
-            console.error('Error fetching celebrity data:', error);
-            alert('Something went wrong. Please try again.');
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    loadingSection.classList.add('hidden');
+                    resultsContainer.classList.remove('hidden');
+                    celebImageContainer.innerHTML = `<img src="${data.image_url}" alt="Celebrity Match">`; 
+                    celebName.textContent = data.name;
+                    celebDescription.textContent = data.description;
+                })
+                .catch(error => {
+                    loadingSection.classList.add('hidden');
+                    alert('Error: ' + error.message);
+                });
         });
-    }
-});
-
     </script>
 </body>
+
 </html>
