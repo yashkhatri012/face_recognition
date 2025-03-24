@@ -1,0 +1,7 @@
+Flask: 3.0.3
+TensorFlow: 2.9.0
+Keras: 2.9.0
+keras-vggface: 0.6
+NumPy: 1.22.4
+OpenCV: 4.11.0
+SciPy: 1.9.3

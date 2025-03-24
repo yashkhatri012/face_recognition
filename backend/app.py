@@ -24,6 +24,8 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+
+# Extract Features from image
 def extract_features(img_path, model, detector):
     img = cv2.imread(img_path)
     results = detector.detect_faces(img)
@@ -43,38 +45,43 @@ def extract_features(img_path, model, detector):
 
     return model.predict(preprocessed_img).flatten()
 
+# Recommending a celeb based on cosine_similarity
 def recommend(feature_list, features):
     similarity = [cosine_similarity(features.reshape(1, -1), f.reshape(1, -1))[0, 0] for f in feature_list]
     index_pos = np.argmax(similarity)
     return index_pos
 
+# HomePage
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
 @app.route('/upload', methods=['POST'])
 def upload():
+    # checks if the request contains an image file
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
-
+    
+    # Ensures the uploaded image has a valid filename.
     file = request.files['image']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
-
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)   # Saves the uploaded image
     file.save(filepath)
 
-    features = extract_features(filepath, model, detector)
+    features = extract_features(filepath, model, detector)  # Extract features from the image
     if features is None:
         return jsonify({"error": "No face detected. Try another image."}), 400
 
     index_pos = recommend(feature_list, features)
     celeb_path = filenames[index_pos]
 
-    # Extract celebrity name from directory path instead of filename
-    # Assuming structure is data/actor_name/image.jpg
+    # Extract celebrity name from directory path
     celeb_name = os.path.basename(os.path.dirname(celeb_path))
     
+
     print(f"Celebrity path: {celeb_path}")
     print(f"Celebrity name: {celeb_name}")
     
@@ -84,12 +91,12 @@ def upload():
         if img is None:
             raise Exception(f"Failed to load image from path: {celeb_path}")
             
-        # Make sure the image is large enough
+        # Making the small image large 
         height, width = img.shape[:2]
-        # If the image is too small, resize it to be at least 600px in either dimension
+        
         min_dimension = 600
         if height < min_dimension or width < min_dimension:
-            # Calculate new size maintaining aspect ratio
+            
             if width < height:
                 new_width = min_dimension
                 new_height = int(height * (min_dimension / width))
@@ -103,7 +110,7 @@ def upload():
         _, buffer = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, 95])
         image_data = base64.b64encode(buffer).decode('utf-8')
         
-        print(f"Image loaded successfully, size: {len(image_data)} bytes")
+        print(f"Image loaded successfully")
         
         return jsonify({
             "name": celeb_name,
@@ -116,7 +123,7 @@ def upload():
             "name": celeb_name,
             "image_url": "",
             "error": f"Could not load image: {str(e)}",
-            "description": "You and this Bollywood star could be twins!"
+            "description": "Try again with another Image"
         })
 
 if __name__ == '__main__':
