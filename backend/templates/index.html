@@ -180,46 +180,56 @@
 
     
     <script>
-        
         document.getElementById('imageUpload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file && file.type.match('image.*')) {
-                // Hide the instruction text
-                document.getElementById('uploadInstruction').style.display = 'none';
-                
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    // Create image element for user photo
-                    const userImage = new Image();
-                    userImage.src = e.target.result;
-                    
-                    // Clear previous content and add the new image
-                    const userImageContainer = document.getElementById('userImageContainer');
-                    userImageContainer.innerHTML = '';
-                    userImageContainer.appendChild(userImage);
-                    
-                    // Show results container immediately
-                    document.getElementById('resultsContainer').classList.remove('hidden');
-                    
-                    // Select a random celebrity (in a real app, this would be based on AI matching)
-                    const randomCeleb = celebrities[Math.floor(Math.random() * celebrities.length)];
-                    
-                    // Update celebrity information
-                    const celebImage = new Image();
-                    celebImage.src = randomCeleb.image;
-                    
-                    const celebImageContainer = document.getElementById('celebImageContainer');
-                    celebImageContainer.innerHTML = '';
-                    celebImageContainer.appendChild(celebImage);
-                    
-                    document.getElementById('celebName').textContent = randomCeleb.name;
-                    document.getElementById('celebDescription').textContent = randomCeleb.description;
-                };
-                
-                reader.readAsDataURL(file);
-            }
+    const file = event.target.files[0];
+    
+    if (file && file.type.match('image.*')) {
+        // Hide the instruction text
+        document.getElementById('uploadInstruction').style.display = 'none';
+        
+        // Display the uploaded image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const userImage = new Image();
+            userImage.src = e.target.result;
+
+            const userImageContainer = document.getElementById('userImageContainer');
+            userImageContainer.innerHTML = '';
+            userImageContainer.appendChild(userImage);
+
+            // Show the results container
+            document.getElementById('resultsContainer').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+
+        // Send the image to the Flask backend
+        const formData = new FormData();
+        formData.append('image', file);
+
+        fetch('http://localhost:5000/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update celebrity information from the backend
+            const celebImage = new Image();
+            celebImage.src = data.image_url;  // Backend should return an image URL
+
+            const celebImageContainer = document.getElementById('celebImageContainer');
+            celebImageContainer.innerHTML = '';
+            celebImageContainer.appendChild(celebImage);
+
+            document.getElementById('celebName').textContent = data.name;
+            document.getElementById('celebDescription').textContent = data.description;
+        })
+        .catch(error => {
+            console.error('Error fetching celebrity data:', error);
+            alert('Something went wrong. Please try again.');
         });
+    }
+});
+
     </script>
 </body>
 </html>

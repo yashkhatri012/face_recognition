@@ -22,16 +22,6 @@ filenames= pickle.load(open('filenames.pkl','rb' ))
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Ensure the uploads folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def save_uploaded_image(uploaded_image):
-    try:
-        with open(os.path.join('uploads', uploaded_image.name), 'wb') as f:
-            f.write(uploaded_image.getbuffer())
-        return True
-    except:
-        return False
 
 
 def extract_features(img_path,model,detector):
@@ -88,7 +78,10 @@ def upload():
     print(features.shape)
     index_pos=recommend(feature_list, features)
     print(index_pos)
-    return filenames[index_pos]
+    
+    celeb=filenames[index_pos]
+
+    return jsonify(celeb)
 
 
 if __name__ == '__main__':
